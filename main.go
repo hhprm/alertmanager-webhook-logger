@@ -79,9 +79,33 @@ func logAlerts(alerts template.Data, logger log.Logger) error {
 		alertLogger := logWith(alert.Labels, logger)
 		alertLogger = logWith(alert.Annotations, alertLogger)
 
-		err := alertLogger.Log("status", alert.Status, "startsAt", alert.StartsAt, "endsAt", alert.EndsAt, "generatorURL", alert.GeneratorURL, "externalURL", alerts.ExternalURL, "receiver", alerts.Receiver)
-		if err != nil {
-			return err
+		if alert.Status == "resolved" {
+			tsDelta := alert.EndsAt.Sub(alert.StartsAt).Seconds()
+			err := alertLogger.Log(
+				"resolved_secs", tsDelta,
+				"startsAtUepoch", alert.StartsAt.Unix(),
+				"endsAtUepoch", alert.EndsAt.Unix(),
+				"status", alert.Status,
+				"startsAt", alert.StartsAt,
+				"endsAt", alert.EndsAt,
+				"generatorURL", alert.GeneratorURL,
+				"externalURL", alerts.ExternalURL,
+				"receiver", alerts.Receiver)
+			if err != nil {
+				return err
+			}
+		} else {
+			err := alertLogger.Log(
+				"status", alert.Status,
+				"startsAtUepoch", alert.StartsAt.Unix(),
+				"startsAt", alert.StartsAt,
+				"endsAt", alert.EndsAt,
+				"generatorURL", alert.GeneratorURL,
+				"externalURL", alerts.ExternalURL,
+				"receiver", alerts.Receiver)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
